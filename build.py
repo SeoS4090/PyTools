@@ -9,7 +9,18 @@ import os
 import sys
 import subprocess
 import shutil
+import zipfile
+import requests
+import json
 from pathlib import Path
+
+# GITHUB_TOKEN을 환경변수에서 읽음
+def get_github_token():
+    token = os.environ.get("GITHUB_TOKEN")
+    if not token:
+        print("GITHUB_TOKEN 환경변수를 설정하세요.")
+        sys.exit(1)
+    return token
 
 def install_pyinstaller():
     """PyInstaller 설치"""
@@ -80,6 +91,59 @@ def clean_build_files():
     except Exception as e:
         print(f"정리 중 오류: {e}")
 
+def zip_build(version):
+    dist_path = Path("dist")
+    exe_path = dist_path / "PyTools.exe"
+    zip_name = f"PyTools-{version}.zip"
+    zip_path = dist_path / zip_name
+    with zipfile.ZipFile(zip_path, "w") as zipf:
+        zipf.write(exe_path, arcname="PyTools.exe")
+    print(f"압축 파일 생성: {zip_path}")
+    return zip_path
+
+def upload_to_github_release(version, zip_path, repo, token):
+    api_url = f"https://api.github.com/repos/{repo}/releases/tags/v{version}"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json"
+    }
+    response = requests.get(api_url, headers=headers)
+    if response.status_code == 404:
+        # 릴리즈 생성
+        create_url = f"https://api.github.com/repos/{repo}/releases"
+        data = {
+            "tag_name": f"v{version}",
+            "name": f"v{version}",
+            "body": f"PyTools {version} 자동 릴리즈",
+            "draft": False,
+            "prerelease": False
+        }
+        response = requests.post(create_url, headers=headers, data=json.dumps(data))
+        if response.status_code not in (200, 201):
+            print("릴리즈 생성 실패:", response.text)
+            sys.exit(1)
+        release = response.json()
+    elif response.status_code == 200:
+        release = response.json()
+    else:
+        print("릴리즈 정보 조회 실패:", response.text)
+        sys.exit(1)
+
+    upload_url = release["upload_url"].split("{")[0]
+    with open(zip_path, "rb") as f:
+        headers.update({"Content-Type": "application/zip"})
+        params = {"name": zip_path.name}
+        upload_response = requests.post(
+            upload_url,
+            headers=headers,
+            params=params,
+            data=f
+        )
+    if upload_response.status_code in (200, 201):
+        print("GitHub 릴리즈에 업로드 완료!")
+    else:
+        print("업로드 실패:", upload_response.text)
+
 def main():
     print("PyTools 애플리케이션 빌드 도구")
     print("=" * 40)
@@ -102,6 +166,19 @@ def main():
         response = input("\n빌드 임시 파일들을 정리하시겠습니까? (y/n): ")
         if response.lower() in ['y', 'yes']:
             clean_build_files()
+
+        # config.json에서 버전, 저장소 정보 읽기
+        with open("config.json", encoding="utf-8") as f:
+            config_data = json.load(f)
+        version = config_data.get("version", "1.0.0")
+        repo = config_data.get("github_repo")
+        if not repo:
+            print("github_repo 정보를 설정하세요.")
+            sys.exit(1)
+        token = get_github_token()
+        # 빌드 및 압축
+        zip_path = zip_build(version)
+        upload_to_github_release(version, zip_path, repo, token)
     else:
         print("\n빌드에 실패했습니다.")
         sys.exit(1)
