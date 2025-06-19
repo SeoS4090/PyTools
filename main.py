@@ -39,13 +39,15 @@ class AutoUpdater(QThread):
         while self.running:
             try:
                 self.check_for_updates()
-                for _ in range(self.update_interval):
+                interval = self.update_interval if isinstance(self.update_interval, int) and self.update_interval > 0 else 3600
+                for _ in range(interval):
                     if not self.running:
                         break
                     self.msleep(1000)  # 1초씩 쪼개서 체크
             except Exception as e:
                 self.update_error.emit(f"업데이트 체크 중 오류: {str(e)}")
-                for _ in range(self.update_interval):
+                interval = self.update_interval if isinstance(self.update_interval, int) and self.update_interval > 0 else 3600
+                for _ in range(interval):
                     if not self.running:
                         break
                     self.msleep(1000)
@@ -73,7 +75,7 @@ class MainWindow(QMainWindow):
         )
         self.init_ui()
         self.setup_tray()
-        if config.get("auto_start", True):
+        if bool(config.get("auto_start", True)):
             self.setup_autostart()
         if config.get("check_updates", True):
             self.start_auto_updater()
@@ -198,12 +200,12 @@ GitHub 저장소: {config.get("github_repo")}
 
         # 윈도우 시작시 자동 실행 토글
         auto_start_chk = QCheckBox("윈도우 시작시 자동 실행")
-        auto_start_chk.setChecked(config.get("auto_start", True))
+        auto_start_chk.setChecked(bool(config.get("auto_start", True)))
         layout.addWidget(auto_start_chk)
 
         # 닫기 버튼 트레이 이동 토글
         tray_chk = QCheckBox("닫기 버튼을 누르면 트레이로 이동")
-        tray_chk.setChecked(config.get("minimize_to_tray", True))
+        tray_chk.setChecked(bool(config.get("minimize_to_tray", True)))
         layout.addWidget(tray_chk)
 
         # Save 버튼
@@ -320,11 +322,13 @@ GitHub 저장소: {config.get("github_repo")}
     def log_message(self, message):
         """로그 메시지 추가"""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.log_text.append(f"[{timestamp}] {message}")
+        if hasattr(self, "log_text") and self.log_text is not None:
+            self.log_text.append(f"[{timestamp}] {message}")
+        # 로그 창이 없으면 아무것도 하지 않음
         
     def closeEvent(self, event):
         """창 닫기 이벤트 처리"""
-        if config.get("minimize_to_tray", True):
+        if bool(config.get("minimize_to_tray", True)):
             event.ignore()
             self.minimize_to_tray()
         else:
@@ -334,6 +338,7 @@ GitHub 저장소: {config.get("github_repo")}
                 "window_size": {"width": self.width(), "height": self.height()}
             })
             event.accept()
+            self.quit_application()
 
 def main():
     app = QApplication(sys.argv)

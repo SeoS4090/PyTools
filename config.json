@@ -6,11 +6,11 @@
   "update_interval": 3600,
   "minimize_to_tray": false,
   "window_position": {
-    "x": 99,
-    "y": 69
+    "x": 639,
+    "y": 254
   },
   "window_size": {
-    "width": 600,
-    "height": 400
+    "width": 200,
+    "height": 100
   }
 }
