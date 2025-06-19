@@ -170,7 +170,7 @@ def main():
         # config.json에서 버전, 저장소 정보 읽기
         with open("config.json", encoding="utf-8") as f:
             config_data = json.load(f)
-        version = config_data.get("version", "1.0.0")
+        version = config_data.get("version", "1.0.1")
         repo = config_data.get("github_repo")
         if not repo:
             print("github_repo 정보를 설정하세요.")

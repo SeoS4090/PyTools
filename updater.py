@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 
 class UpdateManager:
-    def __init__(self, current_version="1.0.0", github_repo="your-username/your-repo"):
+    def __init__(self, current_version="1.0.1", github_repo="your-username/your-repo"):
         self.current_version = current_version
         self.github_repo = github_repo
         self.update_url = f"https://api.github.com/repos/{github_repo}/releases/latest"
