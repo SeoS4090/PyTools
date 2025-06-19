@@ -2,18 +2,28 @@ import sys
 import os
 import json
 import requests
+import webbrowser
 from datetime import datetime
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
-                             QHBoxLayout, QPushButton, QLabel, QTextEdit, 
-                             QSystemTrayIcon, QMenu, QAction, QMessageBox, QStyle, QDialog, QCheckBox)
-from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
-from PyQt5.QtGui import QIcon, QFont
+from urllib.parse import urlparse, parse_qs
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from threading import Thread
+from PyQt5.QtWidgets import (
+    QApplication, QMainWindow, QWidget, QSystemTrayIcon, QMenu, QAction, QMessageBox, QStyle, QDialog, QVBoxLayout, QCheckBox, QPushButton, QLabel, QHBoxLayout
+)
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5.QtGui import QIcon, QPixmap
 import psutil
 import winreg
 import subprocess
 
 from config import config
 from updater import UpdateManager
+
+# --- Google OAuth2 관련 상수 ---
+GOOGLE_CLIENT_ID = "44798885024-pf7otl5hsn6a0am4cagg1dlcssr5b6ng.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET = "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"
+GOOGLE_REDIRECT_URI = "http://localhost"
+GOOGLE_SCOPE = "openid email profile"
 
 class AutoUpdater(QThread):
     """자동 업데이트를 처리하는 스레드"""
@@ -73,6 +83,10 @@ class MainWindow(QMainWindow):
             self.version,
             config.get("github_repo", "SeoS4090/PyTools") or "SeoS4090/PyTools"
         )
+        # 구글 연동 상태 변수
+        self.google_connected = False
+        self.google_userinfo = None
+        self.google_tokens = None
         self.init_ui()
         self.setup_tray()
         if bool(config.get("auto_start", True)):
@@ -100,8 +114,12 @@ class MainWindow(QMainWindow):
         
         # Setting 메뉴
         setting_menu = menubar.addMenu("Setting")
-        google_action = QAction("구글 연동", self)
-        setting_menu.addAction(google_action)
+        self.google_action = QAction("구글 연동", self)
+        self.google_action.triggered.connect(self.google_auth)
+        setting_menu.addAction(self.google_action)
+        self.google_disconnect_action = QAction("구글 연동 해제", self)
+        self.google_disconnect_action.triggered.connect(self.google_disconnect)
+        setting_menu.addAction(self.google_disconnect_action)
         env_action = QAction("환경 설정", self)
         env_action.triggered.connect(self.show_env_settings)
         setting_menu.addAction(env_action)
@@ -113,7 +131,21 @@ class MainWindow(QMainWindow):
         about_menu.addAction(help_action)
         
         # 중앙 위젯 및 기타 UI 요소 제거 (메뉴만 남김)
-        self.setCentralWidget(QWidget())
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        # 오른쪽 상단 사용자 정보 표시용 레이아웃
+        self.user_info_layout = QHBoxLayout()
+        self.user_info_layout.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.user_icon_label = QLabel()
+        self.user_name_label = QLabel()
+        self.user_info_layout.addWidget(self.user_icon_label)
+        self.user_info_layout.addWidget(self.user_name_label)
+        # 메인 레이아웃에 사용자 정보 레이아웃만 추가 (상단 우측 정렬)
+        main_layout = QVBoxLayout(central_widget)
+        main_layout.addLayout(self.user_info_layout)
+        main_layout.addStretch(1)
+        self.update_google_userinfo_ui()
+        self.update_google_menu_state()
         
     def setup_tray(self):
         """시스템 트레이 설정"""
@@ -203,7 +235,7 @@ GitHub 저장소: {config.get("github_repo")}
         auto_start_chk.setChecked(bool(config.get("auto_start", True)))
         layout.addWidget(auto_start_chk)
 
-        # 닫기 버튼 트레이 이동 토글
+        # 닫기 버튼을 누르면 트레이로 이동 토글
         tray_chk = QCheckBox("닫기 버튼을 누르면 트레이로 이동")
         tray_chk.setChecked(bool(config.get("minimize_to_tray", True)))
         layout.addWidget(tray_chk)
@@ -339,6 +371,122 @@ GitHub 저장소: {config.get("github_repo")}
             })
             event.accept()
             self.quit_application()
+
+    # --- 구글 OAuth2 연동 ---
+    def update_google_menu_state(self):
+        """구글 연동 상태에 따라 메뉴 활성화/비활성화 및 사용자 정보 UI 갱신"""
+        if self.google_connected:
+            self.google_action.setEnabled(False)
+            self.google_disconnect_action.setEnabled(True)
+        else:
+            self.google_action.setEnabled(True)
+            self.google_disconnect_action.setEnabled(False)
+        self.update_google_userinfo_ui()
+
+    def update_google_userinfo_ui(self):
+        """오른쪽 상단에 구글 사용자 정보(아이콘, 이름) 표시"""
+        if self.google_connected and self.google_userinfo:
+            name = self.google_userinfo.get("name", "")
+            self.user_name_label.setText(name)
+            # 프로필 이미지 표시
+            picture_url = self.google_userinfo.get("picture")
+            if picture_url:
+                try:
+                    import urllib.request
+                    data = urllib.request.urlopen(picture_url).read()
+                    pixmap = QPixmap()
+                    pixmap.loadFromData(data)
+                    self.user_icon_label.setPixmap(
+                        pixmap.scaled(32, 32, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                    )
+                except Exception:
+                    self.user_icon_label.clear()
+            else:
+                self.user_icon_label.clear()
+        else:
+            self.user_name_label.clear()
+            self.user_icon_label.clear()
+
+    def google_auth(self):
+        try:
+            code = self._google_get_auth_code()
+            if not code:
+                QMessageBox.warning(self, "구글 연동", "인증 코득에 실패했습니다.")
+                return
+            tokens = self._google_get_tokens(code)
+            if "access_token" not in tokens:
+                QMessageBox.warning(self, "구글 연동", f"토큰 획득 실패: {tokens}")
+                return
+            userinfo = self._google_get_userinfo(tokens["access_token"])
+            if "email" in userinfo:
+                msg = f"구글 인증 성공!\n\n이메일: {userinfo['email']}\n이름: {userinfo.get('name', '')}"
+                self.google_connected = True
+                self.google_userinfo = userinfo
+                self.google_tokens = tokens
+                self.update_google_menu_state()
+            else:
+                msg = f"사용자 정보 획득 실패: {userinfo}"
+            QMessageBox.information(self, "구글 연동 결과", msg)
+        except Exception as e:
+            QMessageBox.critical(self, "구글 연동 오류", f"구글 인증 중 오류 발생:\n{str(e)}")
+
+    def _google_get_auth_code(self):
+        class OAuthHandler(BaseHTTPRequestHandler):
+            code = None
+            def do_GET(self):
+                parsed = urlparse(self.path)
+                params = parse_qs(parsed.query)
+                if "code" in params:
+                    OAuthHandler.code = params["code"][0]
+                    self.send_response(200)
+                    self.send_header("Content-type", "text/html")
+                    self.end_headers()
+                    self.wfile.write("<h1>인증이 완료되었습니다. 창을 닫으세요.</h1>".encode("utf-8"))
+                else:
+                    self.send_response(400)
+                    self.end_headers()
+        def start_server():
+            httpd = HTTPServer(("localhost", 80), OAuthHandler)
+            httpd.handle_request()
+        auth_url = (
+            "https://accounts.google.com/o/oauth2/v2/auth?"
+            f"client_id={GOOGLE_CLIENT_ID}&"
+            f"redirect_uri={GOOGLE_REDIRECT_URI}&"
+            f"response_type=code&"
+            f"scope={GOOGLE_SCOPE}&"
+            "access_type=offline"
+        )
+        Thread(target=start_server, daemon=True).start()
+        webbrowser.open(auth_url)
+        while OAuthHandler.code is None:
+            QApplication.processEvents()
+        return OAuthHandler.code
+
+    def _google_get_tokens(self, code):
+        token_url = "https://oauth2.googleapis.com/token"
+        data = {
+            "code": code,
+            "client_id": GOOGLE_CLIENT_ID,
+            "client_secret": GOOGLE_CLIENT_SECRET,
+            "redirect_uri": GOOGLE_REDIRECT_URI,
+            "grant_type": "authorization_code"
+        }
+        response = requests.post(token_url, data=data)
+        return response.json()
+
+    def _google_get_userinfo(self, access_token):
+        userinfo_url = "https://www.googleapis.com/oauth2/v2/userinfo"
+        headers = {"Authorization": f"Bearer {access_token}"}
+        response = requests.get(userinfo_url, headers=headers)
+        return response.json()
+
+    def google_disconnect(self):
+        """구글 연동 해제"""
+        self.google_connected = False
+        self.google_userinfo = None
+        self.google_tokens = None
+        self.update_google_menu_state()
+        QMessageBox.information(self, "구글 연동 해제", "구글 연동이 해제되었습니다.")
 
 def main():
     app = QApplication(sys.argv)
