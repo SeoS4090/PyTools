@@ -1,0 +1,16 @@
+{
+  "version": "1.0.0",
+  "github_repo": "SeoS4090/PyTools",
+  "auto_start": false,
+  "check_updates": true,
+  "update_interval": 3600,
+  "minimize_to_tray": false,
+  "window_position": {
+    "x": 99,
+    "y": 69
+  },
+  "window_size": {
+    "width": 600,
+    "height": 400
+  }
+}
