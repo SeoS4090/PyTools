@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 
 class UpdateManager:
-    def __init__(self, current_version="1.0.1", github_repo="your-username/your-repo"):
+    def __init__(self, current_version="1.0.2", github_repo="your-username/your-repo"):
         self.current_version = current_version
         self.github_repo = github_repo
         self.update_url = f"https://api.github.com/repos/{github_repo}/releases/latest"
@@ -61,59 +61,46 @@ class UpdateManager:
             return False
     
     def install_update(self, update_file_path):
-        """업데이트 설치"""
+        """업데이트 설치 (실제 덮어쓰기는 재시작 스크립트에서 진행)"""
         try:
             # 백업 생성
             backup_dir = Path("backup")
             backup_dir.mkdir(exist_ok=True)
-            
-            # 현재 파일들 백업
             current_files = [f for f in Path(".").iterdir() if f.is_file() and f.suffix in ['.py', '.exe']]
             for file in current_files:
                 shutil.copy2(file, backup_dir / file.name)
-            
-            # 업데이트 파일 압축 해제
+            # 업데이트 파일 압축 해제 (temp_update 폴더에만)
             with zipfile.ZipFile(update_file_path, 'r') as zip_ref:
                 zip_ref.extractall("temp_update")
-            
-            # 새 파일들 복사
-            temp_dir = Path("temp_update")
-            for file in temp_dir.rglob("*"):
-                if file.is_file():
-                    target_path = Path(file.name)
-                    shutil.copy2(file, target_path)
-            
-            # 임시 파일 정리
-            shutil.rmtree("temp_update")
-            os.remove(update_file_path)
-            
+            # 임시 파일 및 zip 삭제는 재시작 스크립트에서 처리
             return True
         except Exception as e:
             print(f"설치 실패: {e}")
             return False
     
     def create_restart_script(self):
-        """재시작 스크립트 생성"""
-        restart_script = """
-import os
-import sys
-import time
-import subprocess
-
-# 잠시 대기
-time.sleep(2)
-
-# 애플리케이션 재시작
-if os.path.exists('main.py'):
-    subprocess.Popen([sys.executable, 'main.py'])
-elif os.path.exists('main.exe'):
-    subprocess.Popen(['main.exe'])
-
-# 이 스크립트 삭제
-os.remove(__file__)
-"""
-        
-        with open("restart.py", "w") as f:
-            f.write(restart_script)
-        
-        return "restart.py" 
+        """재시작 스크립트(.bat) 생성: 실행 중인 exe 종료 후 덮어쓰기 및 재실행"""
+        script = r'''
+@echo off
+REM 2초 대기
+ping 127.0.0.1 -n 3 > nul
+REM 기존 exe가 완전히 종료될 때까지 대기
+:loop
+TASKLIST | find /I "PyTools.exe" >nul 2>&1
+if not errorlevel 1 (
+    ping 127.0.0.1 -n 2 > nul
+    goto loop
+)
+REM 새 파일로 덮어쓰기
+copy /Y temp_update\PyTools.exe PyTools.exe
+REM 임시 폴더 및 zip 삭제
+rmdir /S /Q temp_update
+if exist update-*.zip del update-*.zip
+REM 프로그램 재실행
+start "" PyTools.exe
+exit
+'''
+        script_path = "restart_update.bat"
+        with open(script_path, "w", encoding="utf-8") as f:
+            f.write(script)
+        return script_path 
