@@ -31,7 +31,7 @@ class AutoUpdater(QThread):
     update_complete = pyqtSignal()
     update_error = pyqtSignal(str)
     
-    def __init__(self, current_version="1.0.0"):
+    def __init__(self, current_version="1.0.2"):
         super().__init__()
         self.current_version = current_version
         self.github_repo = config.get("github_repo", "your-username/your-repo")
@@ -76,7 +76,7 @@ class AutoUpdater(QThread):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.version = config.get("version", "1.0.0") or "1.0.0"
+        self.version = config.get("version", "1.0.2") or "1.0.2"
         self.tray_icon = None
         self.updater = None
         self.update_manager = UpdateManager(

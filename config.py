@@ -5,16 +5,22 @@ from pathlib import Path
 class Config:
     def __init__(self, config_file="config.json"):
         self.config_file = config_file
-        self.default_config = {
-            "version": "1.0.0",
-            "github_repo": "SeoS4090/PyTools",
-            "auto_start": True,
-            "check_updates": True,
-            "update_interval": 3600,  # 1시간
-            "minimize_to_tray": True,
-            "window_position": {"x": 100, "y": 100},
-            "window_size": {"width": 600, "height": 400}
-        }
+        # config.json이 있으면 그 값을 default_config로 사용
+        if os.path.exists(self.config_file):
+            with open(self.config_file, 'r', encoding='utf-8') as f:
+                self.default_config = json.load(f)
+        else:
+            # config.json이 없을 때만 내부 기본값 사용
+            self.default_config = {
+                "version": "1.0.2",
+                "github_repo": "SeoS4090/PyTools",
+                "auto_start": True,
+                "check_updates": True,
+                "update_interval": 3600,  # 1시간
+                "minimize_to_tray": True,
+                "window_position": {"x": 100, "y": 100},
+                "window_size": {"width": 600, "height": 400}
+            }
         self.config = self.load_config()
     
     def load_config(self):

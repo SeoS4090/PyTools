@@ -94,10 +94,13 @@ def clean_build_files():
 def zip_build(version):
     dist_path = Path("dist")
     exe_path = dist_path / "PyTools.exe"
+    config_path = Path("config.json")
     zip_name = f"PyTools-{version}.zip"
     zip_path = dist_path / zip_name
     with zipfile.ZipFile(zip_path, "w") as zipf:
         zipf.write(exe_path, arcname="PyTools.exe")
+        if config_path.exists():
+            zipf.write(config_path, arcname="config.json")
     print(f"압축 파일 생성: {zip_path}")
     return zip_path
 
