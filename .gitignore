@@ -194,6 +194,8 @@ cython_debug/
 .cursorindexingignore
 
 music_cache/*
+data/config.json
+src/music_cache/*
 !music_cache/.gitkeep
 Cookie.txt
 playlist.json
