@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MusicPlayerPage</class>
+ <widget class="QWidget" name="MusicPlayerPage">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>594</width>
+    <height>463</height>
+   </rect>
+  </property>
+  <layout class="QHBoxLayout" name="outer_layout">
+   <item>
+    <layout class="QVBoxLayout" name="main_layout">
+     <item>
+      <widget class="QFrame" name="search_bar">
+       <layout class="QHBoxLayout" name="search_bar_layout">
+        <item>
+         <widget class="QLineEdit" name="search_input"/>
+        </item>
+        <item>
+         <widget class="QPushButton" name="toggle_playlist_btn"/>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QListWidget" name="playlist_widget"/>
+     </item>
+     <item>
+      <widget class="QFrame" name="control_bar">
+       <layout class="QHBoxLayout" name="control_layout">
+        <item>
+         <widget class="QLabel" name="album_art_label">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>1</horstretch>
+            <verstretch>1</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>200</width>
+            <height>200</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" name="right_main_layout">
+          <item>
+           <layout class="QVBoxLayout" name="title_artist_layout">
+            <item>
+             <widget class="QLabel" name="song_title_label"/>
+            </item>
+            <item>
+             <widget class="QLabel" name="song_artist_label"/>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="seeker_row">
+            <item>
+             <widget class="QLabel" name="current_time_label"/>
+            </item>
+            <item>
+             <widget class="QSlider" name="seek_slider">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="total_time_label"/>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="controls_row_layout">
+            <item>
+             <layout class="QHBoxLayout" name="main_controls_layout">
+              <item>
+               <widget class="QPushButton" name="prev_button"/>
+              </item>
+              <item>
+               <widget class="QPushButton" name="play_pause_button"/>
+              </item>
+              <item>
+               <widget class="QPushButton" name="next_button"/>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QVBoxLayout" name="side_controls_layout2">
+              <item>
+               <spacer name="side2_top_spacer">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QPushButton" name="repeat_button"/>
+              </item>
+              <item>
+               <widget class="QPushButton" name="shuffle_button"/>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" name="side_controls_layout3">
+          <item>
+           <spacer name="side3_top_spacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QSlider" name="volume_slider">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="volume_button"/>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QFrame" name="playlist_panel">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>500</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::Panel</enum>
+     </property>
+     <widget class="QWidget" name="layoutWidget">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>391</width>
+        <height>453</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="playlist_panel_layout" stretch="0,0,0">
+       <property name="sizeConstraint">
+        <enum>QLayout::SetDefaultConstraint</enum>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="playlist_title"/>
+       </item>
+       <item>
+        <widget class="QListWidget" name="user_playlist_widget"/>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="playlist_btn_layout">
+         <item>
+          <widget class="QPushButton" name="btn_remove"/>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btn_up"/>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btn_down"/>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btn_save"/>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

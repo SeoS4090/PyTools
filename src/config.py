@@ -2,8 +2,13 @@ import json
 import os
 from pathlib import Path
 
+# 프로젝트 루트 경로 설정
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 class Config:
-    def __init__(self, config_file="config.json"):
+    def __init__(self, config_file=None):
+        if config_file is None:
+            config_file = os.path.join(PROJECT_ROOT, "data", "config.json")
         self.config_file = config_file
         # config.json이 있으면 그 값을 default_config로 사용
         if os.path.exists(self.config_file):
@@ -19,7 +24,9 @@ class Config:
                 "update_interval": 3600,  # 1시간
                 "minimize_to_tray": True,
                 "window_position": {"x": 100, "y": 100},
-                "window_size": {"width": 600, "height": 400}
+                "window_size": {"width": 575, "height": 600},
+                "theme": "dark",
+                "youtube_cookies_browser": "none" # 쿠키를 사용하지 않음 (none, chrome, firefox, edge 등)
             }
         self.config = self.load_config()
     
@@ -68,9 +75,20 @@ class Config:
         self.config.update(updates)
         return self.save_config()
     
+    def delete(self, key):
+        """특정 설정 키를 삭제합니다."""
+        if key in self.config:
+            del self.config[key]
+            return self.save_config()
+        return True # 키가 없어도 성공으로 처리
+    
     def reset_to_default(self):
         """기본 설정으로 초기화"""
+        # google_tokens는 유지하고 나머지 값만 초기화
+        tokens = self.config.get("google_tokens")
         self.config = self.default_config.copy()
+        if tokens:
+            self.config["google_tokens"] = tokens
         return self.save_config()
 
 # 전역 설정 인스턴스

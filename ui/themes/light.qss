@@ -1,0 +1,93 @@
+/* Light Theme */
+QWidget {
+    background-color: #f0f0f0;
+    color: #000000;
+    border: none;
+}
+QMainWindow, QDialog {
+    background-color: #ffffff;
+}
+QMenuBar {
+    background-color: #e8e8e8;
+}
+QMenuBar::item:selected {
+    background-color: #dcdcdc;
+}
+QMenu {
+    background-color: #ffffff;
+    border: 1px solid rgba(0,0,0,0);
+}
+QMenu::item:selected {
+    background-color: #dcdcdc;
+}
+QPushButton {
+    background-color: #e0e0e0;
+    border: 1px solid rgba(0,0,0,0);
+    padding: 8px;
+    border-radius: 4px;
+}
+QPushButton:hover {
+    background-color: #dcdcdc;
+}
+QPushButton:pressed {
+    background-color: #cccccc;
+}
+QLineEdit, QListWidget {
+    background-color: #ffffff;
+    border: 1px solid rgba(0,0,0,0);
+    padding: 5px;
+    border-radius: 4px;
+}
+QSlider::groove:horizontal {
+    border: 1px solid rgba(0,0,0,0);
+    height: 8px;
+    background: #ddd;
+    margin: 2px 0;
+    border-radius: 4px;
+}
+QSlider::handle:horizontal {
+    background: #888;
+    border: 1px solid rgba(0,0,0,0);
+    width: 14px;
+    margin: -4px 0;
+    border-radius: 7px;
+}
+
+/* --- 아이콘 버튼 스타일 --- */
+#play_pause_button {
+    qproperty-icon: url(../icons/player_play.svg);
+}
+#next_button {
+    qproperty-icon: url(../icons/player_seek-forward.svg);
+}
+#prev_button {
+    qproperty-icon: url(../icons/player_seek-backward.svg);
+}
+#volume_button {
+    qproperty-icon: url(../icons/player_volume.svg);
+}
+#repeat_button {
+    qproperty-icon: url(../icons/player_repeat.svg);
+}
+#shuffle_button {
+    qproperty-icon: url(../icons/player_shuffle.svg);
+}
+#expand_button {
+    qproperty-icon: url(../icons/player_chevron-down.svg);
+}
+#toggle_playlist_btn {
+    qproperty-icon: url(../icons/player_chevron-down.svg);
+}
+#btn_remove {
+    qproperty-icon: url(../icons/player_remove.svg);
+}
+#btn_up {
+    qproperty-icon: url(../icons/player_up.svg);
+}
+#btn_down {
+    qproperty-icon: url(../icons/player_down.svg);
+}
+#btn_save {
+    qproperty-icon: url(../icons/player_save.svg);
+}
+            
